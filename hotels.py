@@ -1,5 +1,5 @@
 from fastapi import Query, APIRouter, Body, Path, HTTPException
-
+from dependencies import PaginationDep
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
@@ -16,10 +16,9 @@ hotels = [
 
 @router.get("", summary="Показываем список отелей, по умолчанию по 5 на странице",)
 def get_hotels(
+        pagination: PaginationDep,
         id: int | None = Query(None, description="Айдишник"),
         title: str | None = Query(None, description="Название отеля"),
-        page: int = Query(1, ge=1, description="Номер страницы пагинации"),
-        per_page: int | None = Query(4, ge=4, description="Количество на странице пагинации")
 ):
     hotels_ = []
 
@@ -30,18 +29,23 @@ def get_hotels(
             continue
         hotels_.append(hotel)
 
-    end_index = page * per_page
-    start_index = end_index - per_page
+    if pagination.per_page is not None:
+        if pagination.page is None:
+            pagination.page = 1
+        end_index = pagination.page * pagination.per_page
+        start_index = end_index - pagination.per_page
 
-    end_index = min(end_index, len(hotels_))
+        end_index = min(end_index, len(hotels_))
 
-    if start_index >= len(hotels_):
-        max_pages = len(hotels_) // per_page + (1 if len(hotels_) % per_page != 0 else 0)
-        raise HTTPException(
-            status_code=400,
-            detail=f"Страницы {page} не существует. Всего страниц : {max_pages}")
+        if start_index >= len(hotels_):
+            max_pages = len(hotels_) // pagination.per_page + (1 if len(hotels_) % pagination.per_page != 0 else 0)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Страницы {pagination.page} не существует. Всего страниц : {max_pages}")
 
-    return hotels_[start_index: end_index]
+        return hotels_[start_index: end_index]
+
+    return hotels_
 
 
 @router.post("")
