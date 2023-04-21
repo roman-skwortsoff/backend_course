@@ -1,5 +1,5 @@
 from fastapi import Query, APIRouter, Body, Path, HTTPException
-from dependencies import PaginationDep
+from app.api.dependencies import PaginationDep
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
@@ -14,7 +14,7 @@ hotels = [
 ]
 
 
-@router.get("", summary="Показываем список отелей, по умолчанию по 5 на странице",)
+@router.get("", summary="Показываем список отелей",)
 def get_hotels(
         pagination: PaginationDep,
         id: int | None = Query(None, description="Айдишник"),
