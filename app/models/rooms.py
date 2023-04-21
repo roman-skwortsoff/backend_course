@@ -7,7 +7,7 @@ class RoomsOrm(Base):
     __tablename__ = "rooms"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    hotel_id: Mapped[int] = mapped_column("hotels.id")
+    hotel_id: Mapped[int] = mapped_column(ForeignKey("hotels.id"))
     title: Mapped[str]
     description: Mapped[int | None]
     price: Mapped[int]
