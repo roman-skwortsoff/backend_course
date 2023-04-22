@@ -1,5 +1,10 @@
 from fastapi import Query, APIRouter, Body, Path, HTTPException
+from sqlalchemy import insert, select
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from app.api.dependencies import PaginationDep
+from app.database import async_session_maker, engine
+from app.models.hotels import HotelOrm
+from app.schemas.hotels import Hotel
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
@@ -14,50 +19,67 @@ hotels = [
 ]
 
 
-@router.get("", summary="Показываем список отелей",)
-def get_hotels(
+@router.get("", summary="Показываем список отелей, изначально по 5 на странице",)
+async def get_hotels(
         pagination: PaginationDep,
-        id: int | None = Query(None, description="Айдишник"),
-        title: str | None = Query(None, description="Название отеля"),
+        filter_title: str | None = Query(None, description="Поиск по слову в названии"),
+        filter_location: str | None = Query(None, description="Поиск по слову в адресе"),
 ):
-    hotels_ = []
+    per_page = pagination.per_page or 5
+    async with (async_session_maker() as session):
+        query = select(HotelOrm)
+        if filter_title:
+            query = query.where(HotelOrm.title
+                                .ilike(f"%{filter_title}%")
+                                )
+        if filter_location:
+            query = query.where(HotelOrm.location
+                                .ilike(f"%{filter_location}%"))
+        query = (query
+                 .limit(per_page)
+                 .offset(per_page * (pagination.page - 1))
+        )
+        result = await session.execute(query)
+        #print(type(result), result)
+        hotels = result.scalars().all()
+        return hotels
 
-    for hotel in hotels:
-        if id and hotel["id"] != id:
-            continue
-        if title and hotel["title"] != title:
-            continue
-        hotels_.append(hotel)
 
-    if pagination.per_page is not None:
-        if pagination.page is None:
-            pagination.page = 1
-        end_index = pagination.page * pagination.per_page
-        start_index = end_index - pagination.per_page
-
-        end_index = min(end_index, len(hotels_))
-
-        if start_index >= len(hotels_):
-            max_pages = len(hotels_) // pagination.per_page + (1 if len(hotels_) % pagination.per_page != 0 else 0)
-            raise HTTPException(
-                status_code=400,
-                detail=f"Страницы {pagination.page} не существует. Всего страниц : {max_pages}")
-
-        return hotels_[start_index: end_index]
+    # if pagination.per_page is not None:
+    #     if pagination.page is None:
+    #         pagination.page = 1
+    #     end_index = pagination.page * pagination.per_page
+    #     start_index = end_index - pagination.per_page
+    #
+    #     end_index = min(end_index, len(hotels_))
+    #
+    #     if start_index >= len(hotels_):
+    #         max_pages = len(hotels_) // pagination.per_page + (1 if len(hotels_) % pagination.per_page != 0 else 0)
+    #         raise HTTPException(
+    #             status_code=400,
+    #             detail=f"Страницы {pagination.page} не существует. Всего страниц : {max_pages}")
+    #
+    #     return hotels_[start_index: end_index]
 
     return hotels_
 
 
 @router.post("")
-def create_hotel(title: str = Body(..., description="Название"),
-                 name: str = Body(..., description="Имя")
-                 ):
-    global hotels
-    hotels.append({
-        "id": hotels[-1]["id"] + 1,
-        "title": title,
-        "name": name
-    })
+async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
+    "1": {
+         "summary": "Сочи",
+         "value": {
+             "title": "Отель Сочи 5 звезд у моря",
+             "location": "ул. Моря, 1",
+         }
+    }
+}
+)):
+    async with async_session_maker() as session:
+        add_hotel_stmt = insert(HotelOrm).values(**hotel_data.model_dump())
+        print(add_hotel_stmt.compile(engine, compile_kwargs={"literal_binds": True}))
+        await session.execute(add_hotel_stmt)
+        await session.commit()
     return {"status": "OK"}
 
 
