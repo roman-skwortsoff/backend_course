@@ -12,10 +12,6 @@ from app.config import settings
 from app.database import *
 
 
-print(f"{settings.DB_NAME=}")
-print(f"{settings.DB_URL=}")
-
-
 app = FastAPI(docs_url=None)
 
 @app.get("/")
