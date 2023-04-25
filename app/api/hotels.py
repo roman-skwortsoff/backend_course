@@ -4,20 +4,10 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from app.api.dependencies import PaginationDep
 from app.database import async_session_maker, engine
 from app.models.hotels import HotelOrm
-from app.schemas.hotels import Hotel
+from app.schemas.hotels import Hotel, HotelPATCH
 from repositories.hotels import HotelRepository
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
-
-hotels = [
-    {"id": 1, "title": "Sochi", "name": "sochi"},
-    {"id": 2, "title": "Дубай", "name": "dubai"},
-    {"id": 3, "title": "Мальдивы", "name": "maldivi"},
-    {"id": 4, "title": "Геленджик", "name": "gelendzhik"},
-    {"id": 5, "title": "Москва", "name": "moscow"},
-    {"id": 6, "title": "Казань", "name": "kazan"},
-    {"id": 7, "title": "Санкт-Петербург", "name": "spb"},
-]
 
 
 @router.get("", summary="Показываем список отелей, изначально по 5 на странице",)
@@ -57,9 +47,9 @@ async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
 @router.put("/{hotel_id}")
 async def put_hotel(hotel_id: int, hotel_data: Hotel = Body()) -> None:
     async with async_session_maker() as session:
-        await HotelRepository(session).edit(id=hotel_id, data=hotel_data)
+        await HotelRepository(session).edit(hotel_data, id=hotel_id)
         await session.commit()
-    return None
+    return {"status": "OK"}
 
 
 
@@ -67,19 +57,12 @@ async def put_hotel(hotel_id: int, hotel_data: Hotel = Body()) -> None:
            summary="Частичное обновление данных об отеле",
            description="Тут мы частично обновляем данные, можно отправить name или title"
            )
-def patch_hotel(hotel_id: int = Path(..., description="Айдишник", gt=0),
-              title: str | None = Body(None, description="Название"),
-              name: str | None = Body(None, description="Имя")):
-    if title is None and name is None:
-        raise HTTPException(status_code=400, detail="Не переданы значения")
-    for hotel in hotels:
-        if hotel["id"] == hotel_id:
-            if title:
-                hotel["title"] = title
-            if name:
-                hotel["name"] = name
-            return {"status": "OK"}
-    raise HTTPException(status_code=404, detail="Неверный ID")
+async def patch_hotel(hotel_id: int, hotel_data: HotelPATCH
+              ):
+    async with async_session_maker() as session:
+        await HotelRepository(session).edit(hotel_data, is_patch=True, id=hotel_id)
+        await session.commit()
+    return {"status": "OK"}
 
 
 @router.delete("/{hotel_id}")
@@ -87,4 +70,11 @@ async def delete_hotel(hotel_id: int) -> None:
     async with async_session_maker() as session:
         await HotelRepository(session).delete(id=hotel_id)
         await session.commit()
-    return None
+    return {"status": "OK"}
+
+@router.get("/{hotel_id}")
+async def get_hotel(hotel_id: int):
+    async with async_session_maker() as session:
+        hotel = await HotelRepository(session).get_by_id(id=hotel_id)
+        await session.commit()
+    return hotel

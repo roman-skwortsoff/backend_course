@@ -26,16 +26,20 @@ class BaseReposirory:
         return result.scalars().one_or_none()
 
     async def edit(self, id: int, data: BaseModel, **filter_by) -> None:
-        print(id)
-        print(data)
         stmt = (update(self.model)
-            .where(self.model.id == id)
-            .values(**data.model_dump())
+            .filter_by(**filter_by)
+            .values(**data.model_dump(exclude_unset=is_patch))
                     )
         await self.session.execute(stmt)
 
-
-    async def delete(self, id: int, **filter_by) -> None:
-        stmt = delete(self.model).where(self.model.id == id)
+    async def delete(self, **filter_by) -> None:
+        stmt = delete(self.model).filter_by(**filter_by)
         await self.session.execute(stmt)
+
+    async def get_by_id(self, id: int):
+        stmt = select(self.model).where(self.model.id == id)
+        print(stmt)
+        result = await self.session.execute(stmt)
+        return result.scalars().one_or_none()
+
 
