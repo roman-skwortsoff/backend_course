@@ -55,15 +55,12 @@ async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
 
 
 @router.put("/{hotel_id}")
-def put_hotel(hotel_id: int = Path(..., description="Айдишник", gt=0),
-              title: str = Body(..., description="Название"),
-              name: str = Body(..., description="Имя")):
-    for hotel in hotels:
-        if hotel["id"] == hotel_id:
-            hotel["title"] = title
-            hotel["name"] = name
-            return {"status": "OK"}
-    raise HTTPException(status_code=404, detail="Неверный ID")
+async def put_hotel(hotel_id: int, hotel_data: Hotel = Body()) -> None:
+    async with async_session_maker() as session:
+        await HotelRepository(session).edit(id=hotel_id, data=hotel_data)
+        await session.commit()
+    return None
+
 
 
 @router.patch("/{hotel_id}",
@@ -86,7 +83,8 @@ def patch_hotel(hotel_id: int = Path(..., description="Айдишник", gt=0),
 
 
 @router.delete("/{hotel_id}")
-def delete_hotel(hotel_id: int):
-    global hotels
-    hotels = [hotel for hotel in hotels if hotel["id"] != hotel_id]
-    return {"status": "OK"}
+async def delete_hotel(hotel_id: int) -> None:
+    async with async_session_maker() as session:
+        await HotelRepository(session).delete(id=hotel_id)
+        await session.commit()
+    return None
