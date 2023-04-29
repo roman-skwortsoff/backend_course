@@ -8,8 +8,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from app.api import hotels
-from app.config import settings
-from app.database import *
+from app.api import auth
+from app.core.exceptions import register_exceptions
 
 
 app = FastAPI(docs_url=None)
@@ -29,8 +29,11 @@ async def custom_swagger_ui_html():
         swagger_css_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css",
     )
 
+register_exceptions(app)
 
+app.include_router(auth.router)
 app.include_router(hotels.router)
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
+

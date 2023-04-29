@@ -1,5 +1,5 @@
 from app.models.rooms import RoomsOrm
-from repositories.base import BaseReposirory
+from app.repositories.base import BaseReposirory
 
 class RoomsRepository(BaseReposirory):
     model = RoomsOrm

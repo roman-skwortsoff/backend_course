@@ -1,11 +1,8 @@
-from fastapi import Query, APIRouter, Body, Path, HTTPException
-from sqlalchemy import insert, select
-from sqlalchemy.ext.asyncio import async_sessionmaker
+from fastapi import Query, APIRouter, Body
 from app.api.dependencies import PaginationDep
-from app.database import async_session_maker, engine
-from app.models.hotels import HotelOrm
-from app.schemas.hotels import Hotel, HotelPATCH
-from repositories.hotels import HotelRepository
+from app.database import async_session_maker
+from app.schemas.hotels import HotelAdd, HotelPATCH
+from app.repositories.hotels import HotelRepository
 
 router = APIRouter(prefix="/hotels", tags=["Отели"])
 
@@ -28,7 +25,7 @@ async def get_hotels(
 
 
 @router.post("")
-async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
+async def create_hotel(hotel_data: HotelAdd = Body(openapi_examples={
     "1": {
          "summary": "Сочи",
          "value": {
@@ -45,7 +42,7 @@ async def create_hotel(hotel_data: Hotel = Body(openapi_examples={
 
 
 @router.put("/{hotel_id}")
-async def put_hotel(hotel_id: int, hotel_data: Hotel = Body()) -> None:
+async def put_hotel(hotel_id: int, hotel_data: HotelAdd = Body()) -> None:
     async with async_session_maker() as session:
         await HotelRepository(session).edit(hotel_data, id=hotel_id)
         await session.commit()
