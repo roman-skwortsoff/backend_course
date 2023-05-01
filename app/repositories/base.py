@@ -30,10 +30,12 @@ class BaseReposirory:
         return self.schema.model_validate(model, from_attributes=True)
 
     async def edit(self, data: BaseModel, is_patch: bool = False, **filter_by) -> None:
+        print("!!!", data)
         stmt = (update(self.model)
             .filter_by(**filter_by)
             .values(**data.model_dump(exclude_unset=is_patch))
                     )
+        print("!!!!", stmt)
         await self.session.execute(stmt)
 
 

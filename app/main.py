@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from app.api import hotels
+from app.api import hotels, rooms
 from app.api import auth
 from app.core.exceptions import register_exceptions
 
@@ -32,7 +32,9 @@ async def custom_swagger_ui_html():
 register_exceptions(app)
 
 app.include_router(auth.router)
+app.include_router(rooms.router)
 app.include_router(hotels.router)
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
