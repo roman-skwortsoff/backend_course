@@ -8,7 +8,7 @@ from app.schemas.rooms import RoomAdd, Room, RoomPATCH, RoomAddData, RoomPatchDa
 router = APIRouter(prefix="/hotels", tags=["Номера"])
 
 
-@router.get("/rooms", summary="Весь список номеров, изначально по 5 на странице")
+@router.get("/rooms", summary="Весь список номеров во всех отелях, изначально по 5 на странице")
 async def get_all_rooms(
         pagination: PaginationDep,
         description: str | None = Query(None, description="Описание"),
@@ -27,6 +27,11 @@ async def get_all_rooms(
 async def get_rooms(hotel_id: int):
     async with async_session_maker() as session:
         return await RoomsRepository(session).get_rooms_in_hotel(hotel_id)
+
+@router.get("/{hotel_id}/rooms/{room_id}", summary="Показываем определенный номер",)
+async def get_room(hotel_id: int, room_id: int):
+    async with async_session_maker() as session:
+        return await RoomsRepository(session).get_one_or_none(hotel_id=hotel_id, id=room_id)
 
 
 @router.post("/{hotel_id}/rooms")
@@ -61,8 +66,16 @@ async def patch_room(hotel_id: int, room_id: int, room_data: RoomPATCH = Body()
         await RoomsRepository(session).edit(merged_data, is_patch=True, id=room_id)
         await session.commit()
     return {"status": "OK"}
-#
-#
+
+@router.delete("/{hotel_id}/rooms/{room_id}")
+async def delete_room(hotel_id: int, room_id: int) -> None:
+    async with async_session_maker() as session:
+        await RoomsRepository(session).delete(id=room_id, hotel_id=hotel_id)
+        await session.commit()
+    return {"status": "OK"}
+
+
+
 #
 # @router.patch("/{hotel_id}",
 #            summary="Частичное обновление данных об отеле",
