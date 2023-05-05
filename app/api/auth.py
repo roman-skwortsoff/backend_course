@@ -35,7 +35,7 @@ async def register_user(data: UserRequestAdd, db: DBDep):
     return {"status": "OK"}
 
 
-@router.get("/user")
+@router.get("/me")
 async def get_user(
         user_id: UserIdDep,
         db: DBDep
