@@ -9,6 +9,7 @@ from app.database import Base
 from app.models.hotels import HotelOrm
 from app.models.rooms import RoomsOrm
 from app.models.users import UsersOrm
+from app.models.bookings import BookingsOrm
 
 
 config = context.config
