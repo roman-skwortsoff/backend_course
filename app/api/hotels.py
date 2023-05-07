@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import Query, APIRouter, Body
 from app.api.dependencies import PaginationDep, DBDep
 from app.database import async_session_maker
@@ -11,18 +13,21 @@ router = APIRouter(prefix="/hotels", tags=["Отели"])
 async def get_hotels(
         pagination: PaginationDep,
         db: DBDep,
+        date_from: date = Query(example='2025-05-07', description="Дата приезда"),
+        date_to: date = Query(example='2025-05-08', description="Дата отъезда"),
         location: str | None = Query(None, description="Локация"),
         title: str | None = Query(None, description="Название отеля"),
 ):
 
     per_page = pagination.per_page or 5
-    return await db.hotels.get_all(
+    return await db.hotels.get_filtered_by_date(
+        date_from=date_from,
+        date_to=date_to,
         location=location,
         title=title,
         limit=per_page or 5,
         offset=per_page*(pagination.page-1)
     )
-
 
 @router.post("")
 async def create_hotel(db: DBDep,
