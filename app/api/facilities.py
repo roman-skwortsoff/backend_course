@@ -1,9 +1,6 @@
-from datetime import date
-
-from fastapi import Query, APIRouter, Body
-from app.api.dependencies import PaginationDep, DBDep
-from app.repositories.facilities import FacilitiesRepository
-from app.schemas.facilities import FacilityAdd, Facility
+from fastapi import APIRouter, Body
+from app.api.dependencies import  DBDep
+from app.schemas.facilities import FacilityAdd
 
 router = APIRouter(prefix="/facilities", tags=["Удобства"])
 

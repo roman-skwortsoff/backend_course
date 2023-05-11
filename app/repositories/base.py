@@ -15,7 +15,6 @@ class BaseReposirory:
             .filter(*filter)
             .filter_by(**filter_by)
         )
-
         result = await self.session.execute(query)
         return [self.schema.model_validate(model) for model in result.scalars().all()]
 
