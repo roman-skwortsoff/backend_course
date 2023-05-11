@@ -2,9 +2,7 @@ from datetime import date
 
 from fastapi import Query, APIRouter, Body
 from app.api.dependencies import PaginationDep, DBDep
-from app.database import async_session_maker
-from app.repositories.hotels import HotelRepository
-from app.repositories.rooms import RoomsRepository
+from app.schemas.facilities import RoomFacilityAdd
 from app.schemas.rooms import RoomAdd, Room, RoomPATCH, RoomAddData, RoomPatchData
 
 router = APIRouter(prefix="/hotels", tags=["Номера"])
@@ -42,6 +40,8 @@ async def get_room(hotel_id: int, room_id: int, db: DBDep):
 async def create_room(hotel_id: int, db: DBDep, room_data: RoomAdd = Body(openapi_examples={})):
     merged_data = RoomAddData(**room_data.model_dump(), hotel_id=hotel_id)
     room = await db.rooms.add(merged_data)
+    room_facilities_data = [RoomFacilityAdd(room_id=room.id, facility_id=f_id) for f_id in room_data.facilities_ids]
+    await db.rooms_facilities.add_bulk(room_facilities_data)
     await db.commit()
     return {"status": "OK", "room": room}
 
@@ -54,6 +54,21 @@ async def put_room(hotel_id: int,
                    ) -> None:
     merged_data = RoomAddData(**room_data.model_dump(), hotel_id=hotel_id)
     await db.rooms.edit(merged_data, id=room_id)
+
+    facilities = await db.rooms_facilities.get_filtered(room_id=room_id)
+    facility_ids = {facility.facility_id for facility in facilities}
+    new_facility_ids = set(room_data.facilities_ids)
+
+    to_remove = facility_ids - new_facility_ids
+    to_add = new_facility_ids - facility_ids
+
+    if to_remove:
+        await db.rooms_facilities.delete_by_room_and_facilities(room_id=room_id, facility_ids=list(to_remove))
+
+    if to_add:
+        room_facilities_data = [RoomFacilityAdd(room_id=room_id, facility_id=f_id) for f_id in to_add]
+        await db.rooms_facilities.add_bulk(room_facilities_data)
+
     await db.commit()
     return {"status": "OK"}
 
@@ -62,10 +77,30 @@ async def put_room(hotel_id: int,
            summary="Частичное обновление данных о номерах",
            description="Тут мы частично обновляем данные, можно отправить любое из полей"
            )
-async def patch_room(hotel_id: int, room_id: int, db: DBDep, room_data: RoomPATCH = Body()
+async def patch_room(hotel_id: int,
+                     room_id: int,
+                     db: DBDep,
+                     room_data: RoomPATCH = Body()
               ):
     merged_data = RoomPatchData(**room_data.model_dump(exclude_unset=True), hotel_id=hotel_id)
     await db.rooms.edit(merged_data, is_patch=True, id=room_id)
+
+    if "facilities_ids" in room_data:
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        facilities = await db.rooms_facilities.get_filtered(room_id=room_id)
+        facility_ids = {facility.facility_id for facility in facilities}
+        new_facility_ids = set(room_data.facilities_ids)
+
+        to_remove = facility_ids - new_facility_ids
+        to_add = new_facility_ids - facility_ids
+
+        if to_remove:
+            await db.rooms_facilities.delete_by_room_and_facilities(room_id=room_id, facility_ids=list(to_remove))
+
+        if to_add:
+            room_facilities_data = [RoomFacilityAdd(room_id=room_id, facility_id=f_id) for f_id in to_add]
+            await db.rooms_facilities.add_bulk(room_facilities_data)
+
     await db.commit()
     return {"status": "OK"}
 

@@ -6,13 +6,17 @@ class RoomAdd(BaseModel):
     description: str | None = Field(None)
     price: int
     quantity: int
+    facilities_ids: list[int] | None = None
 
-class RoomAddData(RoomAdd):
+class RoomAddData(BaseModel):
     hotel_id: int
+    title: str
+    description: str | None = Field(None)
+    price: int
+    quantity: int
 
-class Room(RoomAdd):
+class Room(RoomAddData):
     id: int
-    hotel_id: int
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -22,6 +26,11 @@ class RoomPATCH(BaseModel):
     description: str | None = Field(None)
     price: int | None = Field(None)
     quantity: int | None = Field(None)
+    facilities_ids: list[int] | None = Field()
 
-class RoomPatchData(RoomPATCH):
+class RoomPatchData(BaseModel):
     hotel_id: int
+    title: str | None = Field(None)
+    description: str | None = Field(None)
+    price: int | None = Field(None)
+    quantity: int | None = Field(None)
