@@ -29,3 +29,29 @@ async def register_user(setup_database):
                 "password": "1234"
                 }
             )
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def register_hotels(setup_database):
+    with open('tests/mock_hotels.json', 'r') as file:
+        f = file.read()
+    data = json.loads(f)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        for item in data:
+            await ac.post(
+                "/hotels",
+                json=item
+            )
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def register_rooms(register_hotels):
+    with open('tests/mock_rooms.json', 'r') as file:
+        data = json.loads(file.read())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        for item in data:
+            hotel_id = item.pop("hotel_id")
+            await ac.post(
+                f"/hotels/{hotel_id}/rooms",
+                json=item
+            )
