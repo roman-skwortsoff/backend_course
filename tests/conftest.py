@@ -4,6 +4,7 @@ from httpx import AsyncClient, ASGITransport
 from sqlalchemy import text, insert
 from wheel.metadata import yield_lines
 
+from app.api.dependencies import get_db
 from app.config import settings
 from app.database import Base, engine_null, async_session_maker_null
 from app.main import app
@@ -37,10 +38,18 @@ async def setup_database():
         await db.commit()
 
 
-@pytest.fixture(scope="session")
+async def get_db_null():
+    async with DB_Manager(session_factory=async_session_maker_null) as db:
+        yield db
+
+app.dependency_overrides[get_db] = get_db_null
+
+
+@pytest.fixture(scope="function")
 async def ac() -> AsyncClient:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        yield ac
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            yield ac
 
 
 @pytest.fixture(scope="function")
