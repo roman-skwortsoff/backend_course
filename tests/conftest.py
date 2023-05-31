@@ -5,6 +5,7 @@ mock.patch("fastapi_cache.decorator.cache", lambda *args, **kwargs: lambda f: f)
 
 
 import pytest
+from fastapi import Response
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import text, insert
 from wheel.metadata import yield_lines
@@ -81,3 +82,22 @@ async def register_user(setup_database):
                 "password": "1234"
                 }
             )
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def autenticated_ac(register_user):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        responce = await ac.post(
+            "auth/login",
+            json={
+                "email": "kot@pes.ru",
+                "password": "1234"
+                }
+            )
+        access_cookie = responce.cookies.get("access_token")
+        assert access_cookie
+        assert responce.status_code == 200
+
+        yield ac
+
+        assert ac.cookies.get("access_token") == access_cookie
