@@ -6,7 +6,10 @@ import uvicorn
 import sys
 from pathlib import Path
 from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.backends.redis import RedisBackend
+
+from app.config import settings
 
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -35,6 +38,11 @@ async def lifespan(app: FastAPI):
     FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
     yield
     await redis_manager.close()
+
+
+# if settings.MODE == "TEST": #
+#     FastAPICache.init(InMemoryBackend(), prefix="fastapi-cache")
+
 
 app = FastAPI(docs_url=None, lifespan=lifespan)
 

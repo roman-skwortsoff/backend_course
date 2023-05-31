@@ -1,4 +1,9 @@
 import json
+from unittest import mock
+
+mock.patch("fastapi_cache.decorator.cache", lambda *args, **kwargs: lambda f: f).start()
+
+
 import pytest
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import text, insert
@@ -11,6 +16,7 @@ from app.main import app
 from app.models import *
 from app.schemas.hotels import HotelAdd
 from app.schemas.rooms import RoomAdd, RoomAddData
+from app.setup import redis_manager
 from app.utils.db_manager import DB_Manager
 
 
@@ -39,17 +45,24 @@ async def setup_database():
 
 
 async def get_db_null():
+    await redis_manager.connect()
     async with DB_Manager(session_factory=async_session_maker_null) as db:
         yield db
+    await redis_manager.close()
 
 app.dependency_overrides[get_db] = get_db_null
 
+# для запуска в lifespan
+# @pytest.fixture(scope="function")
+# async def ac() -> AsyncClient:
+#     async with app.router.lifespan_context(app):
+#         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+#             yield ac
 
 @pytest.fixture(scope="function")
 async def ac() -> AsyncClient:
-    async with app.router.lifespan_context(app):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-            yield ac
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
 
 
 @pytest.fixture(scope="function")
