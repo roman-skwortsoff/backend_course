@@ -85,7 +85,7 @@ async def register_user(setup_database):
 
 
 @pytest.fixture(scope="session")
-async def autenticated_ac(register_user):
+async def authenticated_ac(register_user):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         responce = await ac.post(
             "auth/login",
