@@ -3,6 +3,7 @@ from sqlalchemy import delete
 
 from app.database import engine_null, Base
 from app.models import BookingsOrm
+from tests.conftest import get_db_null
 
 
 @pytest.mark.parametrize("room_id, date_from, date_to, status_code", [
@@ -33,34 +34,33 @@ async def test_add_booking(
         assert res["status"] == "OK"
         assert "booking" in res
 
-@pytest.fixture(scope="function")
-async def delete_all_bookings(db):
-    await db.session.execute(delete(BookingsOrm))
-    await db.commit()
-    yield db
+@pytest.fixture(scope="module")
+async def delete_all_bookings():
+    async for _db in get_db_null():
+        await _db.session.execute(delete(BookingsOrm))
+        await _db.commit()
 
-@pytest.mark.parametrize("room_id, date_from, date_to, count", [
+@pytest.mark.parametrize("room_id, date_from, date_to, rooms_booked", [
     (1, "2025-06-01", "2025-06-02", 1),
     (1, "2025-06-01", "2025-06-02", 2),
     (1, "2025-06-01", "2025-06-02", 3),
 ])
 async def test_add_and_get_my_bookings(
-        room_id, date_from, date_to, count,
+        room_id, date_from, date_to, rooms_booked,
         delete_all_bookings, authenticated_ac):
-    for _ in range(count):
-        response = await authenticated_ac.post(
-            "/bookings",
-            json={"room_id": room_id,
-                  "date_from": date_from,
-                  "date_to": date_to,
-                  }
-        )
-        assert response.status_code == 200
+    response = await authenticated_ac.post(
+        "/bookings",
+        json={"room_id": room_id,
+              "date_from": date_from,
+              "date_to": date_to,
+              }
+    )
+    assert response.status_code == 200
 
     response = await authenticated_ac.get("/bookings/me")
     data = response.json()
     assert response.status_code == 200
     assert isinstance(data, list)
-    assert len(data) == count
+    assert len(data) == rooms_booked
 
 
