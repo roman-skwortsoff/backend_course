@@ -1,11 +1,15 @@
 import pytest
 
 
-@pytest.mark.parametrize("email, password, status_code, s_email, s_password, s_status_code", [
-    ("koto_pes@test.com", "1234", 200, "Koto_pes@test.com", "234", 400),
-    ("SpongeBob@test.com", "1234", 200, "spongebob@test.com", "234", 400),
+@pytest.mark.parametrize("email, password, status_code", [
+    ("koto_pes@test.com", "1234", 200),
+    ("Koto_pes@test.com", "124", 400),
+    ("SpongeBob@test.com", "1234", 200),
+    ("bob@test", "1234", 422),
 ])
-async def test_users(ac, email, password, status_code, s_email, s_password, s_status_code):
+async def test_users(ac, email, password, status_code):
+
+    # /register
     response = await ac.post(
         "auth/register",
         json={
@@ -15,15 +19,10 @@ async def test_users(ac, email, password, status_code, s_email, s_password, s_st
     )
     assert response.status_code == status_code
 
-    response = await ac.post(
-        "auth/register",
-        json={
-            "email": s_email,
-            "password": s_password
-            }
-    )
-    assert response.status_code == s_status_code
+    if response.status_code != 200:
+        return
 
+    # /login
     response = await ac.post(
         "auth/login",
         json={
@@ -36,20 +35,20 @@ async def test_users(ac, email, password, status_code, s_email, s_password, s_st
     assert ac.cookies["access_token"]
     assert response.status_code == 200
 
-    response = await ac.get(
-        "/auth/me"
-    )
+    # /me
+    response = await ac.get("/auth/me")
     assert response.status_code == 200
     res = response.json()
     assert res['email'] == email
+    assert "password" not in res
+    assert "hashed_password" not in res
+    assert "id" in res
 
-    response = await ac.post(
-        "/auth/logout"
-    )
+    # /logout
+    response = await ac.post("/auth/logout")
     assert response.status_code == 200
     assert "access_token" not in ac.cookies
 
-    response = await ac.get(
-        "/auth/me"
-    )
+    # /me
+    response = await ac.get("/auth/me")
     assert response.status_code == 401
