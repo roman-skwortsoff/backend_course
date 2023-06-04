@@ -3,7 +3,7 @@ from sqlalchemy import select
 from app.models.users import UsersOrm
 from app.repositories.base import BaseReposirory
 from app.repositories.mappers.mappers import UserDataMapper
-from app.schemas.users import User, UseWithHashedPassword
+from app.schemas.users import UseWithHashedPassword
 
 
 class UsersRepository(BaseReposirory):

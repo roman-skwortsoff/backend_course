@@ -1,7 +1,6 @@
 import pytest
 from sqlalchemy import delete
 
-from app.database import engine_null, Base
 from app.models import BookingsOrm
 from tests.conftest import get_db_null
 

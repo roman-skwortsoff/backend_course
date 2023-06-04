@@ -1,22 +1,20 @@
+# ruff: noqa: E402
 import json
 from unittest import mock
 
 mock.patch("fastapi_cache.decorator.cache", lambda *args, **kwargs: lambda f: f).start()
 
-
 import pytest
-from fastapi import Response
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import text, insert
-from wheel.metadata import yield_lines
 
 from app.api.dependencies import get_db
 from app.config import settings
 from app.database import Base, engine_null, async_session_maker_null
 from app.main import app
-from app.models import *
+from app.models import * # noqa
 from app.schemas.hotels import HotelAdd
-from app.schemas.rooms import RoomAdd, RoomAddData
+# from app.schemas.rooms import RoomAdd, RoomAddData
 from app.setup import redis_manager
 from app.utils.db_manager import DB_Manager
 
@@ -40,7 +38,7 @@ async def setup_database():
     async with DB_Manager(session_factory=async_session_maker_null) as db:
         await db.hotels.add_bulk(hotels)
         # await db.rooms.add_bulk(rooms) # можно и так сделать удалив сырой sql запрос
-        stmt = insert(RoomsOrm).values(rooms_json)
+        stmt = insert(RoomsOrm).values(rooms_json)  # noqa F405
         await db.session.execute(stmt)
         await db.commit()
 

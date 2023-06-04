@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import Query, APIRouter, Body
 from app.api.dependencies import PaginationDep, DBDep
 from app.schemas.facilities import RoomFacilityAdd
-from app.schemas.rooms import RoomAdd, Room, RoomPATCH, RoomAddData, RoomPatchData
+from app.schemas.rooms import RoomAdd, RoomPATCH, RoomAddData, RoomPatchData
 
 router = APIRouter(prefix="/hotels", tags=["Номера"])
 
