@@ -12,8 +12,9 @@ from app.api.dependencies import get_db
 from app.config import settings
 from app.database import Base, engine_null, async_session_maker_null
 from app.main import app
-from app.models import * # noqa
+from app.models import *  # noqa
 from app.schemas.hotels import HotelAdd
+
 # from app.schemas.rooms import RoomAdd, RoomAddData
 from app.setup import redis_manager
 from app.utils.db_manager import DB_Manager
@@ -23,13 +24,13 @@ from app.utils.db_manager import DB_Manager
 async def setup_database():
     assert settings.MODE == "TEST"
     async with engine_null.begin() as conn:
-        await conn.execute(text('CREATE EXTENSION IF NOT EXISTS citext'))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS citext"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
-    with open('tests/mock_hotels.json', encoding="utf-8") as file_hotels:
+    with open("tests/mock_hotels.json", encoding="utf-8") as file_hotels:
         hotels_json = json.load(file_hotels)
-    with open('tests/mock_rooms.json', encoding="utf-8") as file_rooms:
+    with open("tests/mock_rooms.json", encoding="utf-8") as file_rooms:
         rooms_json = json.load(file_rooms)
 
     hotels = [HotelAdd.model_validate(hotel) for hotel in hotels_json]
@@ -49,6 +50,7 @@ async def get_db_null():
         yield db
     await redis_manager.close()
 
+
 app.dependency_overrides[get_db] = get_db_null
 
 # для запуска в lifespan
@@ -58,9 +60,12 @@ app.dependency_overrides[get_db] = get_db_null
 #         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
 #             yield ac
 
+
 @pytest.fixture(scope="function")
 async def ac() -> AsyncClient:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
         yield ac
 
 
@@ -72,26 +77,20 @@ async def db() -> DB_Manager:
 
 @pytest.fixture(scope="session", autouse=True)
 async def register_user(setup_database):
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        await ac.post(
-            "auth/register",
-            json={
-                "email": "kot@pes.ru",
-                "password": "1234"
-                }
-            )
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
+        await ac.post("auth/register", json={"email": "kot@pes.ru", "password": "1234"})
 
 
 @pytest.fixture(scope="session")
 async def authenticated_ac(register_user):
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as ac:
         responce = await ac.post(
-            "auth/login",
-            json={
-                "email": "kot@pes.ru",
-                "password": "1234"
-                }
-            )
+            "auth/login", json={"email": "kot@pes.ru", "password": "1234"}
+        )
         access_cookie = responce.cookies.get("access_token")
         assert access_cookie
         assert ac.cookies["access_token"]

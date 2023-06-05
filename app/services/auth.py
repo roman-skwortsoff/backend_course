@@ -8,16 +8,18 @@ from app.config import settings
 
 
 class AuthService:
-
-    pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     def create_access_token(self, data: dict) -> str:
         to_encode = data.copy()
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
         to_encode |= {"exp": expire}
-        encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+        encoded_jwt = jwt.encode(
+            to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+        )
         return encoded_jwt
-
 
     def hash_password(self, password: str) -> str:
         return self.pwd_context.hash(password)
@@ -28,9 +30,7 @@ class AuthService:
     def decode_token(self, token: str) -> dict:
         try:
             decoded = jwt.decode(
-                token,
-                settings.JWT_SECRET_KEY,
-                algorithms=[settings.JWT_ALGORITHM]
+                token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
             )
             return decoded
         except jwt.exceptions.DecodeError:
@@ -38,4 +38,6 @@ class AuthService:
         except jwt.exceptions.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail="Токен истек")
         except Exception as e:
-            raise HTTPException(status_code=401, detail=f"Ошибка при декодировании токена: {str(e)}")
+            raise HTTPException(
+                status_code=401, detail=f"Ошибка при декодировании токена: {str(e)}"
+            )

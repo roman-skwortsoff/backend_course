@@ -4,11 +4,12 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from starlette import status
 
-#from app.models import RoomsOrm
+# from app.models import RoomsOrm
 from app.models.bookings import BookingsOrm
 from app.repositories.base import BaseReposirory
 from app.repositories.mappers.mappers import BookingDataMapper
-#from app.repositories.mappers.mappers import RoomDataMapper
+
+# from app.repositories.mappers.mappers import RoomDataMapper
 from app.repositories.utils import rooms_ids_for_booking
 from app.schemas.bookings import BookingAddData
 
@@ -18,18 +19,15 @@ class BookingsRepository(BaseReposirory):
     mapper = BookingDataMapper
 
     async def get_booking_with_today_checkin(self):
-        query = (select(BookingsOrm)
-                 .filter(BookingsOrm.date_from == date.today())
-                 )
+        query = select(BookingsOrm).filter(BookingsOrm.date_from == date.today())
         res = await self.session.execute(query)
-        return [self.mapper.map_to_domain_entity(booking) for booking in res.scalars().all()]
+        return [
+            self.mapper.map_to_domain_entity(booking) for booking in res.scalars().all()
+        ]
 
-    async def add_booking(self, data: BookingAddData, hotel_id:int):
-
+    async def add_booking(self, data: BookingAddData, hotel_id: int):
         rooms_ids_to_get = rooms_ids_for_booking(
-            date_from=data.date_from,
-            date_to=data.date_to,
-            hotel_id=hotel_id
+            date_from=data.date_from, date_to=data.date_to, hotel_id=hotel_id
         )
 
         # 1е решение
@@ -58,6 +56,5 @@ class BookingsRepository(BaseReposirory):
             return booking
         else:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Номер был забронирован"
+                status_code=status.HTTP_409_CONFLICT, detail="Номер был забронирован"
             )
