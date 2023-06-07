@@ -1,10 +1,14 @@
 from datetime import date
 
-from fastapi import Query, APIRouter, Body, HTTPException
+from fastapi import Query, APIRouter, Body
 from fastapi_cache.decorator import cache
 
 from app.api.dependencies import PaginationDep, DBDep
-from app.exceptions import ObjectNotFoundException
+from app.exceptions import (
+    ObjectNotFoundException,
+    check_date_to_after_date_from,
+    HotelNotFoundHTTPException,
+)
 from app.schemas.hotels import HotelAdd, HotelPATCH
 
 
@@ -24,6 +28,7 @@ async def get_hotels(
     location: str | None = Query(None, description="Локация"),
     title: str | None = Query(None, description="Название отеля"),
 ):
+    check_date_to_after_date_from(date_from=date_from, date_to=date_to)
     per_page = pagination.per_page or 5
     return await db.hotels.get_filtered_by_date(
         date_from=date_from,
@@ -86,4 +91,4 @@ async def get_hotel(hotel_id: int, db: DBDep):
         hotel = await db.hotels.get_one(id=hotel_id)
         return hotel
     except ObjectNotFoundException:
-        raise HTTPException(status_code=404, detail="Отеля не существует")
+        raise HotelNotFoundHTTPException
