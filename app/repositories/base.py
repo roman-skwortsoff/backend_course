@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 from sqlalchemy import select, insert, update, delete
+from sqlalchemy.exc import NoResultFound, IntegrityError
 
 from app.repositories.mappers.base import DataMapper
+from app.exceptions import ObjectNotFoundException, DataBaseIntegrityException
 
 
 class BaseReposirory:
@@ -29,17 +31,33 @@ class BaseReposirory:
             return None
         return self.mapper.map_to_domain_entity(model)
 
+    async def get_one(self, **filter_by):
+        query = select(self.model).filter_by(**filter_by)
+        result = await self.session.execute(query)
+        try:
+            model = result.scalar_one()
+        except NoResultFound:
+            raise ObjectNotFoundException
+        return self.mapper.map_to_domain_entity(model)
+
     async def add(self, data: BaseModel):
         add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
-        result = await self.session.execute(add_stmt)
+        try:
+            result = await self.session.execute(add_stmt)
+        except IntegrityError:
+            raise DataBaseIntegrityException
         model = result.scalars().one()
         return self.mapper.map_to_domain_entity(model)
 
     async def add_bulk(self, data: list[BaseModel]):
         add_stmt = insert(self.model).values([item.model_dump() for item in data])
-        await self.session.execute(add_stmt)
+        try:
+            await self.session.execute(add_stmt)
+        except IntegrityError:
+            raise DataBaseIntegrityException
 
     async def edit(self, data: BaseModel, is_patch: bool = False, **filter_by) -> None:
+        await self.get_one(**filter_by)
         stmt = (
             update(self.model)
             .filter_by(**filter_by)
@@ -48,5 +66,9 @@ class BaseReposirory:
         await self.session.execute(stmt)
 
     async def delete(self, **filter_by) -> None:
+        await self.get_one(**filter_by)
         stmt = delete(self.model).filter_by(**filter_by)
-        await self.session.execute(stmt)
+        try:
+            await self.session.execute(stmt)
+        except IntegrityError:
+            raise DataBaseIntegrityException

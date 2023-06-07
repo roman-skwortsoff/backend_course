@@ -15,7 +15,8 @@ sys.path.append(str(Path(__file__).parent.parent))
 # from app.config import settings
 from app.api import hotels, rooms, bookings, facilities, images
 from app.api import auth
-from app.core.exceptions import register_exceptions
+
+# from app.core.exceptions import register_exceptions
 from app.setup import redis_manager
 from app.api.dependencies import get_db
 
@@ -64,7 +65,7 @@ async def custom_swagger_ui_html():
     )
 
 
-register_exceptions(app)
+# register_exceptions(app)
 
 app.include_router(auth.router)
 app.include_router(rooms.router)

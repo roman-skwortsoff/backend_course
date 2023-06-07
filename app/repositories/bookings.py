@@ -1,8 +1,7 @@
 from datetime import date
-
-from fastapi import HTTPException
 from sqlalchemy import select
-from starlette import status
+
+from app.exceptions import AllRoomsAreBookedException
 
 # from app.models import RoomsOrm
 from app.models.bookings import BookingsOrm
@@ -54,7 +53,5 @@ class BookingsRepository(BaseReposirory):
         if data.room_id in available_rooms_ids:
             booking = await self.add(data)
             return booking
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Номер был забронирован"
-            )
+
+        raise AllRoomsAreBookedException
