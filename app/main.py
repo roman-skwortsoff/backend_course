@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.openapi.docs import get_swagger_ui_html
 import uvicorn
+import logging
 import sys
 from pathlib import Path
 from fastapi_cache import FastAPICache
@@ -11,6 +12,8 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 
 sys.path.append(str(Path(__file__).parent.parent))
+
+logging.basicConfig(level=logging.DEBUG)
 
 # from app.config import settings
 from app.api import hotels, rooms, bookings, facilities, images

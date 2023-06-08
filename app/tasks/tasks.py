@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from PIL import Image
 from time import sleep
@@ -51,7 +52,7 @@ async def get_bookings_with_today_checkin():
     print("Я запускаюсь")
     async with DB_Manager(session_factory=async_session_maker_null) as db:
         booking = await db.bookings.get_booking_with_today_checkin()
-        print(f"{booking=}")
+        logging.debug(f"{booking=}")
 
 
 @celery_instance.task(name="booking_today_checkin")
