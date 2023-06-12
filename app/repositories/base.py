@@ -57,7 +57,9 @@ class BaseReposirory:
                 )
                 raise ObjectAlreadyExistException from ex
             else:
-                logging.error(f"Незнакомая ошибка добавления в БД>. Входные данные:{data}. Тип ошибки:{type(ex.orig.__cause__)=}")
+                logging.error(
+                    f"Незнакомая ошибка добавления в БД>. Входные данные:{data}. Тип ошибки:{type(ex.orig.__cause__)=}"
+                )
                 raise DataBaseIntegrityException
         model = result.scalars().one()
         return self.mapper.map_to_domain_entity(model)
