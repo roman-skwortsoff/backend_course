@@ -23,24 +23,25 @@ def get_hotels(
 ):
     hotels_ = []
 
+    for hotel in hotels:
+        if id and hotel["id"] != id:
+            continue
+        if title and hotel["title"] != title:
+            continue
+        hotels_.append(hotel)
+
     end_index = page * per_page
     start_index = end_index - per_page
 
-    end_index = min(end_index, len(hotels))
+    end_index = min(end_index, len(hotels_))
 
-    if start_index >= len(hotels):
-        max_pages = len(hotels) // per_page + (1 if len(hotels) % per_page != 0 else 0)
+    if start_index >= len(hotels_):
+        max_pages = len(hotels_) // per_page + (1 if len(hotels_) % per_page != 0 else 0)
         raise HTTPException(
             status_code=400,
             detail=f"Страницы {page} не существует. Всего страниц : {max_pages}")
 
-    for i in range(start_index, end_index):
-        if id and hotels[i]["id"] != id:
-            continue
-        if title and hotels[i]["title"] != title:
-            continue
-        hotels_.append(hotels[i])
-    return hotels_
+    return hotels_[start_index: end_index]
 
 
 @router.post("")
