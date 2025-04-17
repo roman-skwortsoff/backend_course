@@ -1,0 +1,94 @@
+from fastapi import Query, APIRouter, Body, Path, HTTPException
+
+
+router = APIRouter(prefix="/hotels", tags=["Отели"])
+
+hotels = [
+    {"id": 1, "title": "Sochi", "name": "sochi"},
+    {"id": 2, "title": "Дубай", "name": "dubai"},
+    {"id": 3, "title": "Мальдивы", "name": "maldivi"},
+    {"id": 4, "title": "Геленджик", "name": "gelendzhik"},
+    {"id": 5, "title": "Москва", "name": "moscow"},
+    {"id": 6, "title": "Казань", "name": "kazan"},
+    {"id": 7, "title": "Санкт-Петербург", "name": "spb"},
+]
+
+
+@router.get("", summary="Показываем список отелей, по умолчанию по 5 на странице",)
+def get_hotels(
+        id: int | None = Query(None, description="Айдишник"),
+        title: str | None = Query(None, description="Название отеля"),
+        page: int = Query(1, ge=1, description="Номер страницы пагинации"),
+        per_page: int | None = Query(4, ge=4, description="Количество на странице пагинации")
+):
+    hotels_ = []
+
+    end_index = page * per_page
+    start_index = end_index - per_page
+
+    end_index = min(end_index, len(hotels))
+
+    if start_index >= len(hotels):
+        max_pages = len(hotels) // per_page + (1 if len(hotels) % per_page != 0 else 0)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Страницы {page} не существует. Всего страниц : {max_pages}")
+
+    for i in range(start_index, end_index):
+        if id and hotels[i]["id"] != id:
+            continue
+        if title and hotels[i]["title"] != title:
+            continue
+        hotels_.append(hotels[i])
+    return hotels_
+
+
+@router.post("")
+def create_hotel(title: str = Body(..., description="Название"),
+                 name: str = Body(..., description="Имя")
+                 ):
+    global hotels
+    hotels.append({
+        "id": hotels[-1]["id"] + 1,
+        "title": title,
+        "name": name
+    })
+    return {"status": "OK"}
+
+
+@router.put("/{hotel_id}")
+def put_hotel(hotel_id: int = Path(..., description="Айдишник", gt=0),
+              title: str = Body(..., description="Название"),
+              name: str = Body(..., description="Имя")):
+    for hotel in hotels:
+        if hotel["id"] == hotel_id:
+            hotel["title"] = title
+            hotel["name"] = name
+            return {"status": "OK"}
+    raise HTTPException(status_code=404, detail="Неверный ID")
+
+
+@router.patch("/{hotel_id}",
+           summary="Частичное обновление данных об отеле",
+           description="Тут мы частично обновляем данные, можно отправить name или title"
+           )
+def patch_hotel(hotel_id: int = Path(..., description="Айдишник", gt=0),
+              title: str | None = Body(None, description="Название"),
+              name: str | None = Body(None, description="Имя")):
+    if title is None and name is None:
+        raise HTTPException(status_code=400, detail="Не переданы значения")
+    for hotel in hotels:
+        if hotel["id"] == hotel_id:
+            if title:
+                hotel["title"] = title
+            if name:
+                hotel["name"] = name
+            return {"status": "OK"}
+    raise HTTPException(status_code=404, detail="Неверный ID")
+
+
+@router.delete("/{hotel_id}")
+def delete_hotel(hotel_id: int):
+    global hotels
+    hotels = [hotel for hotel in hotels if hotel["id"] != hotel_id]
+    return {"status": "OK"}
