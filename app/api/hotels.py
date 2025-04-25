@@ -75,6 +75,6 @@ async def delete_hotel(hotel_id: int) -> None:
 @router.get("/{hotel_id}")
 async def get_hotel(hotel_id: int):
     async with async_session_maker() as session:
-        hotel = await HotelRepository(session).get_by_id(id=hotel_id)
+        hotel = await HotelRepository(session).get_one_or_none(id = hotel_id)
         await session.commit()
     return hotel
