@@ -1,5 +1,6 @@
 from datetime import timezone, timedelta, datetime
 
+from fastapi import HTTPException
 from passlib.context import CryptContext
 import jwt
 
@@ -23,3 +24,19 @@ class AuthService:
 
     def verify_password(self, plain_password, hashed_password):
         return self.pwd_context.verify(plain_password, hashed_password)
+
+    def decode_token(self, token: str) -> dict:
+        print(token)
+        try:
+            decoded = jwt.decode(
+                token,
+                settings.JWT_SECRET_KEY,
+                algorithms=[settings.JWT_ALGORITHM]
+            )
+            return decoded
+        except jwt.exceptions.DecodeError:
+            raise HTTPException(status_code=401, detail="Неверный токен")
+        except jwt.exceptions.ExpiredSignatureError:
+            raise HTTPException(status_code=401, detail="Токен истек")
+        except Exception as e:
+            raise HTTPException(status_code=401, detail=f"Ошибка при декодировании токена: {str(e)}")
