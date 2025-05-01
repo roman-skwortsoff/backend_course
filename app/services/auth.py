@@ -26,7 +26,6 @@ class AuthService:
         return self.pwd_context.verify(plain_password, hashed_password)
 
     def decode_token(self, token: str) -> dict:
-        print(token)
         try:
             decoded = jwt.decode(
                 token,
