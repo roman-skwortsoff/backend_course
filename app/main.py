@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from app.api import hotels, rooms, bookings
+from app.api import hotels, rooms, bookings, facilities
 from app.api import auth
 from app.core.exceptions import register_exceptions
 
@@ -35,6 +35,7 @@ app.include_router(auth.router)
 app.include_router(rooms.router)
 app.include_router(hotels.router)
 app.include_router(bookings.router)
+app.include_router(facilities.router)
 
 
 if __name__ == "__main__":
