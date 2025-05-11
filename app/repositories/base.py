@@ -30,11 +30,15 @@ class BaseReposirory:
             return None
         return self.schema.model_validate(model, from_attributes=True)
 
-    async def add(self, data):
+    async def add(self, data: BaseModel):
         add_stmt = insert(self.model).values(**data.model_dump()).returning(self.model)
         result = await self.session.execute(add_stmt)
         model = result.scalars().one()
         return self.schema.model_validate(model, from_attributes=True)
+
+    async def add_bulk(self, data: list[BaseModel]):
+        add_stmt = insert(self.model).values([item.model_dump() for item in data])
+        await self.session.execute(add_stmt)
 
     async def edit(self, data: BaseModel, is_patch: bool = False, **filter_by) -> None:
         stmt = (update(self.model)
