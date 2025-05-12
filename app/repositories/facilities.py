@@ -1,19 +1,18 @@
-from pydantic import BaseModel
 from sqlalchemy import insert, delete, select
 
 from app.repositories.base import BaseReposirory
 from app.models.facilities import FacilitiesOrm, RoomsFacilitiesOrm
-from app.schemas.facilities import Facility, RoomFacility
+from app.repositories.mappers.mappers import FacilityDataMapper, RoomFacilityDataMapper
 
 
 class FacilitiesRepository(BaseReposirory):
     model = FacilitiesOrm
-    schema = Facility
+    mapper = FacilityDataMapper
 
 
 class RoomsFacilitiesRepository(BaseReposirory):
     model = RoomsFacilitiesOrm
-    schema = RoomFacility
+    mapper = RoomFacilityDataMapper
 
     async def set_facilities_by_room(self,
                                      room_id: int,
