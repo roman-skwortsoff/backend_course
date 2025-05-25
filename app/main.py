@@ -1,18 +1,42 @@
+import asyncio
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.openapi.docs import get_swagger_ui_html
 import uvicorn
-
 import sys
 from pathlib import Path
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from app.api import hotels, rooms, bookings, facilities
+from app.api import hotels, rooms, bookings, facilities, images
 from app.api import auth
 from app.core.exceptions import register_exceptions
+from app.setup import redis_manager
+from app.api.dependencies import get_db
 
 
-app = FastAPI(docs_url=None)
+async def regular_func():
+    async for db in get_db():
+        bookings = await db.bookings.get_booking_with_today_checkin()
+        print(f"{bookings}")
+
+async def regular_func_loop():
+    while True:
+        await regular_func()
+        await asyncio.sleep(10)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(regular_func_loop())
+    await redis_manager.connect()
+    FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
+    yield
+    await redis_manager.close()
+
+app = FastAPI(docs_url=None, lifespan=lifespan)
 
 @app.get("/")
 def func():
@@ -36,6 +60,7 @@ app.include_router(rooms.router)
 app.include_router(hotels.router)
 app.include_router(facilities.router)
 app.include_router(bookings.router)
+app.include_router(images.router)
 
 
 
