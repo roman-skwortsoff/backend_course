@@ -1,13 +1,15 @@
 import json
-
 import pytest
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy import text
+from sqlalchemy import text, insert
 
 from app.config import settings
-from app.database import Base, engine_null
+from app.database import Base, engine_null, async_session_maker_null
 from app.main import app
 from app.models import *
+from app.schemas.hotels import HotelAdd
+from app.schemas.rooms import RoomAdd, RoomAddData
+from app.utils.db_manager import DB_Manager
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -17,6 +19,21 @@ async def setup_database():
         await conn.execute(text('CREATE EXTENSION IF NOT EXISTS citext'))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+
+    with open('tests/mock_hotels.json', encoding="utf-8") as file_hotels:
+        hotels_json = json.load(file_hotels)
+    with open('tests/mock_rooms.json', encoding="utf-8") as file_rooms:
+        rooms_json = json.load(file_rooms)
+
+    hotels = [HotelAdd.model_validate(hotel) for hotel in hotels_json]
+    # rooms = [RoomAddData.model_validate(room) for room in rooms_json]
+
+    async with DB_Manager(session_factory=async_session_maker_null) as db:
+        await db.hotels.add_bulk(hotels)
+        # await db.rooms.add_bulk(rooms) # можно и так сделать удалив сырой sql запрос
+        stmt = insert(RoomsOrm).values(rooms_json)
+        await db.session.execute(stmt)
+        await db.commit()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -28,30 +45,4 @@ async def register_user(setup_database):
                 "email": "kot@pes.ru",
                 "password": "1234"
                 }
-            )
-
-
-@pytest.fixture(scope="session", autouse=True)
-async def register_hotels(setup_database):
-    with open('tests/mock_hotels.json', 'r') as file:
-        f = file.read()
-    data = json.loads(f)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        for item in data:
-            await ac.post(
-                "/hotels",
-                json=item
-            )
-
-
-@pytest.fixture(scope="session", autouse=True)
-async def register_rooms(register_hotels):
-    with open('tests/mock_rooms.json', 'r') as file:
-        data = json.loads(file.read())
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        for item in data:
-            hotel_id = item.pop("hotel_id")
-            await ac.post(
-                f"/hotels/{hotel_id}/rooms",
-                json=item
             )
