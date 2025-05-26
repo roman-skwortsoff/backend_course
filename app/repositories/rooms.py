@@ -25,7 +25,7 @@ class RoomsRepository(BaseReposirory):
         return [RoomDataWithRelsMapper.map_to_domain_entity(model) for model in models]
 
 
-    async def get_all(
+    async def get_all_by_time(
             self,
             description,
             title,

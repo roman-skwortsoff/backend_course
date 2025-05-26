@@ -2,6 +2,7 @@ import json
 import pytest
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import text, insert
+from wheel.metadata import yield_lines
 
 from app.config import settings
 from app.database import Base, engine_null, async_session_maker_null
@@ -34,6 +35,18 @@ async def setup_database():
         stmt = insert(RoomsOrm).values(rooms_json)
         await db.session.execute(stmt)
         await db.commit()
+
+
+@pytest.fixture(scope="session")
+async def ac() -> AsyncClient:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac
+
+
+@pytest.fixture(scope="function")
+async def db() -> DB_Manager:
+    async with DB_Manager(session_factory=async_session_maker_null) as db:
+        yield db
 
 
 @pytest.fixture(scope="session", autouse=True)

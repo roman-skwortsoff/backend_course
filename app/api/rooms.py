@@ -16,7 +16,7 @@ async def get_all_rooms(
         title: str | None = Query(None, description="Название номера"),
         ):
     per_page = pagination.per_page or 5
-    return await db.rooms.get_all(
+    return await db.rooms.get_all_by_time(
         description=description,
         title=title,
         limit=per_page or 5,
