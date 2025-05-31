@@ -1,6 +1,6 @@
 async def test_get_me(autenticated_ac):
-    responce = await autenticated_ac.get(
+    response = await autenticated_ac.get(
         "/auth/me",
         params={}
     )
-    assert responce.status_code == 200
+    assert response.status_code == 200
