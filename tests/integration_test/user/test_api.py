@@ -1,5 +1,5 @@
-async def test_get_me(autenticated_ac):
-    response = await autenticated_ac.get(
+async def test_get_me(authenticated_ac):
+    response = await authenticated_ac.get(
         "/auth/me",
         params={}
     )
