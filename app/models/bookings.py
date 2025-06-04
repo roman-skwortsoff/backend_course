@@ -1,6 +1,6 @@
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, ForeignKey, Date
+from sqlalchemy import ForeignKey
 from datetime import date
 
 from app.database import Base

@@ -6,12 +6,12 @@ import uvicorn
 import sys
 from pathlib import Path
 from fastapi_cache import FastAPICache
-from fastapi_cache.backends.inmemory import InMemoryBackend
+# from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.backends.redis import RedisBackend
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from app.config import settings
+# from app.config import settings
 from app.api import hotels, rooms, bookings, facilities, images
 from app.api import auth
 from app.core.exceptions import register_exceptions

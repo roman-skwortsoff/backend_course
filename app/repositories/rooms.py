@@ -1,12 +1,12 @@
 from datetime import date
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import selectinload
 
 from app.models.rooms import RoomsOrm
 from app.repositories.base import BaseReposirory
 from app.repositories.mappers.mappers import RoomDataMapper, RoomDataWithRelsMapper
 from app.repositories.utils import rooms_ids_for_booking
-from app.schemas.rooms import Room, RoomWithRels
+from app.schemas.rooms import Room
 
 
 class RoomsRepository(BaseReposirory):

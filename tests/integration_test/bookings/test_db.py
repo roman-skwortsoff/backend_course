@@ -43,7 +43,7 @@ async def test_booking_crud(db):
 
     res = await db.bookings.get_one_or_none(id=booking_id)
 
-    assert res == None
+    assert res is None
     assert res != new_update_booking
 
 
