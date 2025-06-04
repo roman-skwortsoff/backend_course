@@ -17,8 +17,11 @@
 2. Установливаем зависимости:
    ```bash
    poetry install
-3. Создаем локальную базу PostgreSQL.
-4. Создаем .env файл, аналогичный .env.docker, записываем свои данные базы.
+3. Создаем локальную базу PostgreSQL, устанавливаем локальный Redis.
+4. Создаем файлы .env и .test.env, аналогичные *.example, записываем свои данные.
+5. Запукаем celery:
+   ```bash
+   celery --app=app.tasks.celery_app:celery_instance worker -l INFO -B
 5. Запускаем проект:
    ```bash
    python3 app/main.py
