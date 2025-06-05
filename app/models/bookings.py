@@ -5,6 +5,7 @@ from datetime import date
 
 from app.database import Base
 
+
 class BookingsOrm(Base):
     __tablename__ = "bookings"
 

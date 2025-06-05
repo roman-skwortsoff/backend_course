@@ -1,6 +1,6 @@
 from app.schemas.hotels import HotelAdd
-#from app.database import async_session_maker_null
-#from app.utils.db_manager import DB_Manager
+# from app.database import async_session_maker_null
+# from app.utils.db_manager import DB_Manager
 
 
 # async def test_add_hotel():

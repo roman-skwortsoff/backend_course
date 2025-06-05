@@ -6,6 +6,7 @@ import uvicorn
 import sys
 from pathlib import Path
 from fastapi_cache import FastAPICache
+
 # from fastapi_cache.backends.inmemory import InMemoryBackend
 from fastapi_cache.backends.redis import RedisBackend
 
@@ -23,6 +24,7 @@ async def regular_func():
     async for db in get_db():
         bookings = await db.bookings.get_booking_with_today_checkin()
         print(f"{bookings}")
+
 
 async def regular_func_loop():
     while True:
@@ -45,6 +47,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(docs_url=None, lifespan=lifespan)
 
+
 @app.get("/")
 def func():
     return "Hello World!"
@@ -60,6 +63,7 @@ async def custom_swagger_ui_html():
         swagger_css_url="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css",
     )
 
+
 register_exceptions(app)
 
 app.include_router(auth.router)
@@ -70,7 +74,5 @@ app.include_router(bookings.router)
 app.include_router(images.router)
 
 
-
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
-

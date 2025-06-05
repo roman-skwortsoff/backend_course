@@ -5,18 +5,16 @@ from app.schemas.users import UserRequestAdd, UserAdd
 from app.services.auth import AuthService
 
 
-router = APIRouter(prefix='/auth', tags=["Авторизация и аутентификация"])
+router = APIRouter(prefix="/auth", tags=["Авторизация и аутентификация"])
 
 
 @router.post("/login")
-async def login_user(
-        data: UserRequestAdd,
-        response: Response,
-        db: DBDep
-):
+async def login_user(data: UserRequestAdd, response: Response, db: DBDep):
     user = await db.users.get_user_with_hashed_password(email=data.email)
     if not user:
-        raise HTTPException(status_code=401, detail="Пользователь с таким email не зарегистрирован")
+        raise HTTPException(
+            status_code=401, detail="Пользователь с таким email не зарегистрирован"
+        )
     if not AuthService().verify_password(data.password, user.password):
         raise HTTPException(status_code=401, detail="Пароль неверный")
     access_token = AuthService().create_access_token({"user_id": user.id})
@@ -34,19 +32,13 @@ async def register_user(data: UserRequestAdd, db: DBDep):
 
 
 @router.get("/me")
-async def get_user(
-        user_id: UserIdDep,
-        db: DBDep
-):
+async def get_user(user_id: UserIdDep, db: DBDep):
     user = await db.users.get_one_or_none(id=user_id)
     return user
 
 
 @router.post("/logout")
-async def logout_user(
-        response: Response,
-        db: DBDep
-):
+async def logout_user(response: Response, db: DBDep):
     response.delete_cookie("access_token")
     await db.commit()
     return {"status": "OK"}

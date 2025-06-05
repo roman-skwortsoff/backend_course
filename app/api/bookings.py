@@ -4,24 +4,29 @@ from app.schemas.bookings import BookingAdd, BookingAddData
 
 router = APIRouter(prefix="/bookings", tags=["Бронирования"])
 
+
 @router.get("")
 async def get_bookings(db: DBDep):
     return await db.bookings.get_all()
 
+
 @router.get("/me")
 async def get_user_bookings(db: DBDep, user_id: UserIdDep):
-    return await db.bookings.get_filtered(user_id = user_id)
+    return await db.bookings.get_filtered(user_id=user_id)
+
 
 @router.post("")
-async def create_booking(db: DBDep,
-                         user_id: UserIdDep,
-                         booking_data: BookingAdd = Body(openapi_examples={})
-                         ):
+async def create_booking(
+    db: DBDep, user_id: UserIdDep, booking_data: BookingAdd = Body(openapi_examples={})
+):
     room = await db.rooms.get_one_or_none(id=booking_data.room_id)
-    merged_data = BookingAddData(**booking_data.model_dump(), price=room.price, user_id=user_id)
+    merged_data = BookingAddData(
+        **booking_data.model_dump(), price=room.price, user_id=user_id
+    )
     booking = await db.bookings.add_booking(merged_data, hotel_id=room.hotel_id)
     await db.commit()
     return {"status": "OK", "booking": booking}
+
 
 @router.delete("/{booking_id}")
 async def delete_booking(booking_id: int, user_id: UserIdDep, db: DBDep) -> None:

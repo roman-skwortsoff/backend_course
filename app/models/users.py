@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import CITEXT
 
 from app.database import Base
 
+
 class UsersOrm(Base):
     __tablename__ = "users"
 

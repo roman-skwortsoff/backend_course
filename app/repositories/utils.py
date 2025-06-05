@@ -6,9 +6,9 @@ from app.models.rooms import RoomsOrm
 
 
 def rooms_ids_for_booking(
-        date_from: date,
-        date_to: date,
-        hotel_id: int | None = None,
+    date_from: date,
+    date_to: date,
+    hotel_id: int | None = None,
 ):
     """
     with events AS (
@@ -57,45 +57,51 @@ def rooms_ids_for_booking(
     WHERE rooms_left > 0;
     """
 
-    events_from = select(
-        BookingsOrm.room_id,
-        label("event_date", BookingsOrm.date_from),
-        label("delta", literal(1))
-    ).select_from(BookingsOrm).filter(
-        BookingsOrm.date_from < date_to,
-        BookingsOrm.date_to > date_from,
+    events_from = (
+        select(
+            BookingsOrm.room_id,
+            label("event_date", BookingsOrm.date_from),
+            label("delta", literal(1)),
         )
+        .select_from(BookingsOrm)
+        .filter(
+            BookingsOrm.date_from < date_to,
+            BookingsOrm.date_to > date_from,
+        )
+    )
 
-    events_to = select(
-        BookingsOrm.room_id,
-        label("event_date", BookingsOrm.date_to),
-        label("delta", literal(-1))
-    ).select_from(BookingsOrm).filter(
-        BookingsOrm.date_from < date_to,
-        BookingsOrm.date_to > date_from,
+    events_to = (
+        select(
+            BookingsOrm.room_id,
+            label("event_date", BookingsOrm.date_to),
+            label("delta", literal(-1)),
         )
+        .select_from(BookingsOrm)
+        .filter(
+            BookingsOrm.date_from < date_to,
+            BookingsOrm.date_to > date_from,
+        )
+    )
 
     events = union_all(events_from, events_to).subquery("events")
-
 
     running_totals = select(
         events.c.room_id,
         events.c.event_date,
-        func.sum(events.c.delta).over(
-            partition_by=events.c.room_id,
-            order_by=events.c.event_date
-        ).label("active_bookings")
+        func.sum(events.c.delta)
+        .over(partition_by=events.c.room_id, order_by=events.c.event_date)
+        .label("active_bookings"),
     ).cte(name="r_totals")
 
-
-    max_rooms_used = (select(
-        running_totals.c.room_id,
-        func.max(running_totals.c.active_bookings).label("rooms_booked"))
-                      .select_from(running_totals)
-                      .group_by(running_totals.c.room_id)
-                      .cte(name="rooms_used")
-                      )
-
+    max_rooms_used = (
+        select(
+            running_totals.c.room_id,
+            func.max(running_totals.c.active_bookings).label("rooms_booked"),
+        )
+        .select_from(running_totals)
+        .group_by(running_totals.c.room_id)
+        .cte(name="rooms_used")
+    )
 
     if hotel_id is not None:
         hotel_filter = RoomsOrm.hotel_id == hotel_id
@@ -105,7 +111,9 @@ def rooms_ids_for_booking(
     rooms_table = (
         select(
             RoomsOrm.id.label("room_id"),
-            (RoomsOrm.quantity - func.coalesce(max_rooms_used.c.rooms_booked, 0)).label("rooms_left")
+            (RoomsOrm.quantity - func.coalesce(max_rooms_used.c.rooms_booked, 0)).label(
+                "rooms_left"
+            ),
         )
         .select_from(RoomsOrm)
         .filter(hotel_filter)
@@ -113,9 +121,8 @@ def rooms_ids_for_booking(
         .cte(name="rooms_table")
     )
 
-
     rooms_ids_to_get = select(rooms_table.c.room_id).filter(
-        rooms_table.c.rooms_left > 0)
-
+        rooms_table.c.rooms_left > 0
+    )
 
     return rooms_ids_to_get
