@@ -1,6 +1,7 @@
 from datetime import date
 from sqlalchemy import select, literal, label, union_all, func
 
+from app.exceptions import IncorrectDatesException
 from app.models.bookings import BookingsOrm
 from app.models.rooms import RoomsOrm
 
@@ -56,6 +57,9 @@ def rooms_ids_for_booking(
     FROM rooms_table
     WHERE rooms_left > 0;
     """
+
+    if date_from >= date_to:
+        raise IncorrectDatesException
 
     events_from = (
         select(
