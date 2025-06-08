@@ -30,7 +30,7 @@ async def register_user(data: UserRequestAdd, db: DBDep):
     try:
         await db.users.add(new_user_data)
     except ObjectAlreadyExistException:
-        raise HTTPException(status_code=400, detail="Пользователь уже зарегистрирован")
+        raise HTTPException(status_code=409, detail="Пользователь уже зарегистрирован")
     await db.commit()
     return {"status": "OK"}
 
