@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(docs_url=None, lifespan=lifespan)
+# app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/")

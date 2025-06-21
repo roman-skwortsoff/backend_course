@@ -14,7 +14,7 @@ services:
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
       - KAFKA_CFG_LOG_RETENTION_HOURS=1
       - KAFKA_CFG_NUM_PARTITIONS=1
@@ -42,6 +42,59 @@ services:
     volumes:
       - redis_data:/data
     restart: always
+
+  backend:
+    build:
+      context: .
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+  celery:
+    build:
+      context: .
+    command: celery -A app.tasks.celery_app:celery_instance worker -l INFO -B
+    volumes:
+      - .:/app
+    depends_on:
+      - backend
+      - redis
+    env_file:
+      - .env
+
+  kafka-consumer:
+    build:
+      context: .
+    command: python app/kafka/consumer.py
+    volumes:
+      - .:/app
+    depends_on:
+      - kafka
+      - backend
+    env_file:
+      - .env
+
+  booking-consumer:
+    build:
+      context: .
+    command: python app/kafka/booking_consumer.py
+    volumes:
+      - .:/app
+    depends_on:
+      - kafka
+      - backend
+    env_file:
+      - .env
+
 
 volumes:
   kafka_data:
