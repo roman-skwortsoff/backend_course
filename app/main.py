@@ -17,9 +17,9 @@ sys.path.append(str(Path(__file__).parent.parent))
 logging.basicConfig(level=logging.DEBUG)
 
 # from app.config import settings
-from app.api import hotels, rooms, bookings, facilities, images
+from app.api import hotels, logs, rooms, bookings, facilities, images
 from app.api import auth
-from app.setup import redis_manager
+from app.setup import redis_manager, mongo_manager
 from app.api.dependencies import get_db
 
 
@@ -39,9 +39,13 @@ async def regular_func_loop():
 async def lifespan(app: FastAPI):
     asyncio.create_task(regular_func_loop())
     await redis_manager.connect()
+    await mongo_manager.connect()
     FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
+    logging.info("Application started")
     yield
     await redis_manager.close()
+    await mongo_manager.close()
+    logging.info("Application shutdown")
 
 
 # if settings.MODE == "TEST": #
@@ -74,6 +78,7 @@ app.include_router(hotels.router)
 app.include_router(facilities.router)
 app.include_router(bookings.router)
 app.include_router(images.router)
+app.include_router(logs.router)
 
 
 if __name__ == "__main__":

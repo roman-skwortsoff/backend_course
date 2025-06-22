@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     DB_USER: str
     DB_PASS: str
 
+    @property
+    def DB_URL(self):
+        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+
     REDIS_HOST: str
     REDIS_POST: int
 
@@ -24,9 +28,13 @@ class Settings(BaseSettings):
 
     KAFKA_BOOTSTRAP_SERVERS: str
 
+    MONGODB_NAME: str
+    MONGO_USERNAME: str
+    MONGO_PASSWORD: str
+
     @property
-    def DB_URL(self):
-        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+    def MONGO_URL(self):
+        return f"mongodb://{self.MONGO_USERNAME}:{self.MONGO_PASSWORD}@mongo:27017/{self.MONGODB_NAME}?authSource={self.MONGODB_NAME}"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
