@@ -21,6 +21,8 @@ from app.api import hotels, logs, rooms, bookings, facilities, images
 from app.api import auth
 from app.setup import redis_manager, mongo_manager
 from app.api.dependencies import get_db
+from app.middleware.logging import logging_middleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 
 async def regular_func():
@@ -40,6 +42,7 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(regular_func_loop())
     await redis_manager.connect()
     await mongo_manager.connect()
+    app.state.mongo_db = mongo_manager._db
     FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
     logging.info("Application started")
     yield
@@ -53,7 +56,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(docs_url=None, lifespan=lifespan)
-# app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(BaseHTTPMiddleware, dispatch=logging_middleware)
 
 
 @app.get("/")

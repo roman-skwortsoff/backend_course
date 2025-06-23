@@ -12,9 +12,9 @@ router = APIRouter(prefix="/logs", tags=["Логи"])
 @router.get(
     "/", summary="Логи из MongoDB", response_model=List[Dict]
 )
-async def get_test_connection( limit: int = Query(default=100, description="Maximum number of items to return"), db: AsyncIOMotorDatabase = Depends(mongo_manager.get_mongodb) ):
+async def get_request_logs( limit: int = Query(default=100, description="Maximum number of items to return"), db: AsyncIOMotorDatabase = Depends(mongo_manager.get_mongodb) ):
     try:
-        cursor = db.test_connection.find().limit(limit)
+        cursor = db.request_logs.find().limit(limit)
         data = await cursor.to_list(length=limit)
         
         for item in data:
