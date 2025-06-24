@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     MONGO_USERNAME: str
     MONGO_PASSWORD: str
 
+    ELASTICSEARCH_URL: str
+
     @property
     def MONGO_URL(self):
         return f"mongodb://{self.MONGO_USERNAME}:{self.MONGO_PASSWORD}@mongo:27017/{self.MONGODB_NAME}?authSource={self.MONGODB_NAME}"

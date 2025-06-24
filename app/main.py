@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.DEBUG)
 # from app.config import settings
 from app.api import hotels, logs, rooms, bookings, facilities, images
 from app.api import auth
-from app.setup import redis_manager, mongo_manager
+from app.setup import redis_manager, mongo_manager, elasticsearch_manager
 from app.api.dependencies import get_db
 from app.middleware.logging import logging_middleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -42,12 +42,14 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(regular_func_loop())
     await redis_manager.connect()
     await mongo_manager.connect()
+    await elasticsearch_manager.connect()
     app.state.mongo_db = mongo_manager._db
     FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
     logging.info("Application started")
     yield
     await redis_manager.close()
     await mongo_manager.close()
+    await elasticsearch_manager.close()
     logging.info("Application shutdown")
 
 
