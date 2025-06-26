@@ -6,28 +6,29 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ElasticsearchManager:
-    def __init__(self, elasticsearch_url):
-        self._client = None
-        self.es_url = elasticsearch_url
+    def __init__(self, url: str):
+        self.es_url = url
+        self._client: AsyncElasticsearch | None = None
 
     async def connect(self):
-        """Установка подключения к Elasticsearch"""
+        self._client = AsyncElasticsearch(
+            hosts=[self.es_url],
+            verify_certs=False,
+            sniff_on_start=False,
+        )
+
         try:
-            self._client = AsyncElasticsearch(
-                hosts=[self.es_url],
-                verify_certs=False,
-                sniff_on_start=True
-            )
-            if await self._client.ping():
-                logger.info("Connected to Elasticsearch")
-            else:
-                raise ConnectionError("Failed to ping Elasticsearch")
+            print(f"🔍 Trying to connect to {self.es_url}")
+            is_alive = await self._client.ping()
         except Exception as e:
-            logger.error(f"Elasticsearch connection error: {e}")
-            raise
+            raise ConnectionError(f"Ping failed: {e}")
+
+        if not is_alive:
+            raise ConnectionError("Failed to ping Elasticsearch")
+
+        print("✅ Connected to Elasticsearch")
 
     async def close(self):
-        """Закрытие подключения"""
         if self._client is not None:
             await self._client.close()
             self._client = None
@@ -37,7 +38,7 @@ class ElasticsearchManager:
     async def get_client(self) -> AsyncGenerator[AsyncElasticsearch, None]:
         if self._client is None:
             await self.connect()
-        
+    
         try:
             yield self._client
         except Exception as e:
