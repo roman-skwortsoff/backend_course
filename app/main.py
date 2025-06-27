@@ -42,14 +42,14 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(regular_func_loop())
     await redis_manager.connect()
     await mongo_manager.connect()
-    # await elasticsearch_manager.connect()
+    await elasticsearch_manager.connect()
     app.state.mongo_db = mongo_manager._db
     FastAPICache.init(RedisBackend(redis_manager.redis), prefix="fastapi-cache")
     logging.info("Application started")
     yield
     await redis_manager.close()
     await mongo_manager.close()
-    # await elasticsearch_manager.close()
+    await elasticsearch_manager.close()
     logging.info("Application shutdown")
 
 
