@@ -16,7 +16,8 @@ async def logging_middleware(request: Request, call_next):
         "path": str(request.url.path),
         "method": request.method,
         "ip": request.client.host if request.client else None,
-        "user_agent": request.headers.get("user-agent")
+        "user_agent": request.headers.get("user-agent"),
+        "transferred_to_es": False
     }
 
     try:

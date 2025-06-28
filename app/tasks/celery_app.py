@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.schedules import crontab
 
 from app.config import settings
 
@@ -12,5 +13,9 @@ celery_instance.conf.beat_schedule = {
     "nazvanie": {
         "task": "booking_today_checkin",
         "schedule": 5,  # лучше использовать crontab и задать время согласно crontab guru
-    }
+    },
+    "transfer_logs_task": {
+        "task": "transfer_logs_to_elasticsearch_task",
+        "schedule": crontab(minute="*/1"),  # каждую минуту
+    },
 }

@@ -1,11 +1,14 @@
 from typing import Annotated
 from fastapi import Depends, Query, Request
 from pydantic import BaseModel
+from elasticsearch import AsyncElasticsearch
+from typing import AsyncGenerator
 
 from app.database import async_session_maker
 from app.exceptions import NotTokenException, NotTokenHTTPException
 from app.services.auth import AuthService
 from app.utils.db_manager import DB_Manager
+from app.setup import mongo_manager, elasticsearch_manager
 
 
 class PaginationParams(BaseModel):

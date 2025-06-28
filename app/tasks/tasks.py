@@ -3,10 +3,17 @@ import logging
 import os
 from PIL import Image
 from time import sleep
+import nest_asyncio
 
 from app.database import async_session_maker_null
+from app.elasticsearch.transfer import transfer_logs_to_elasticsearch
 from app.tasks.celery_app import celery_instance
 from app.utils.db_manager import DB_Manager
+from app.setup import mongo_manager, elasticsearch_manager
+
+
+nest_asyncio.apply()
+logger = logging.getLogger(__name__)
 
 
 @celery_instance.task
@@ -58,3 +65,18 @@ async def get_bookings_with_today_checkin():
 @celery_instance.task(name="booking_today_checkin")
 def test_booking_today_checkin():
     asyncio.run(get_bookings_with_today_checkin())
+
+
+@celery_instance.task(name="transfer_logs_to_elasticsearch_task")
+def transfer_logs_task():
+    async def _transfer():
+        try:
+            es_client = await elasticsearch_manager.get_client_dependency()
+            mongo_db = await mongo_manager.get_mongodb()
+            
+            await transfer_logs_to_elasticsearch(mongo_db=mongo_db, es_client=es_client)
+
+        except Exception as e:
+            logger.error(f"Ошибка в таске переноса логов: {e}")
+
+    asyncio.run(_transfer())

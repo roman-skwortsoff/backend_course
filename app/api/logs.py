@@ -1,16 +1,17 @@
 import uuid
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
+from elasticsearch import AsyncElasticsearch
 from pydantic import BaseModel
 from fastapi import HTTPException, Query, APIRouter, Body, Depends, status
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from app.setup import mongo_manager
+from app.setup import mongo_manager, elasticsearch_manager
 
 router = APIRouter(prefix="/logs", tags=["Логи"])
 
 
 @router.get(
-    "/", summary="Логи из MongoDB", response_model=List[Dict]
+    "/mongo", summary="Логи из MongoDB", response_model=List[Dict]
 )
 async def get_request_logs( limit: int = Query(default=100, description="Maximum number of items to return"), db: AsyncIOMotorDatabase = Depends(mongo_manager.get_mongodb) ):
     try:
@@ -27,7 +28,43 @@ async def get_request_logs( limit: int = Query(default=100, description="Maximum
             status_code=500,
             detail=f"Ошибка при получении данных: {str(e)}"
         )
-    
+
+@router.get("/elastic", summary="Логи из Elasticsearch")
+async def get_logs_from_elasticsearch(
+    method: Optional[str] = Query(None, description="Фильтрация по HTTP-методу"),
+    limit: int = Query(10, ge=1, le=100, description="Максимум 100 логов"),
+    es_client: AsyncElasticsearch = Depends(elasticsearch_manager.get_client_dependency)
+):
+    try:
+        query_body = {
+            "query": {
+                "bool": {
+                    "must": []
+                }
+            },
+            "size": limit,
+            "sort": [{"timestamp": {"order": "desc"}}]
+        }
+
+        if method:
+            query_body["query"]["bool"]["must"].append({
+                "match": {"method": method}
+            })
+
+        response = await es_client.search(index="request_logs", body=query_body)
+
+        hits = response["hits"]["hits"]
+        logs = [hit["_source"] for hit in hits]
+
+        return {
+            "count": len(logs),
+            "logs": logs
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
+
+
 class TestData(BaseModel):
     test_field: str = "test_value"
     timestamp: datetime = datetime.now()

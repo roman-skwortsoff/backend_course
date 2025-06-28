@@ -70,3 +70,8 @@ class ElasticsearchManager:
         except Exception as e:
             logger.error(f"Elasticsearch operation failed: {e}")
             raise
+    
+    async def get_client_dependency(self) -> AsyncElasticsearch:
+        if self._client is None:
+            await self.connect()
+        return self._client
